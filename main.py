@@ -1,7 +1,8 @@
-import pgzrun
-import pygame
 import random
 import time
+
+import pgzrun
+import pygame
 
 # Window instellen
 WIDTH = 600
@@ -9,6 +10,8 @@ HEIGHT = 350
 MARGIN = 10
 MARGIN_METEOR = 20
 DELAY_METEOR = 3
+MARGIN_COLLISION = 15
+GAME_SPEED = 3
 
 # Achtergrond instellen
 background = pygame.image.load("images/achtergrond.jpeg")
@@ -18,11 +21,11 @@ background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 spaceship_image = pygame.image.load("images/ruimteschip.png")
 spaceship_image = pygame.transform.scale(spaceship_image, (80, 80))
 spaceship_image = pygame.transform.rotate(spaceship_image, -45)
-temp_file = "images/ruimteschip_rotated.png"
+temp_file = "images/ruimteschip_small.png"
 pygame.image.save(spaceship_image, temp_file)
 
-spaceship = Actor("ruimteschip_rotated")
-spaceship.pos = WIDTH // 2, HEIGHT // 2
+spaceship = Actor("ruimteschip_small")
+spaceship.pos = WIDTH // 3, HEIGHT // 2
 
 # Meteor instellen
 meteor_image = pygame.image.load("images/meteor.png")
@@ -32,7 +35,7 @@ temp_file = "images/meteor_small.png"
 pygame.image.save(meteor_image, temp_file)
 
 meteor = Actor("meteor_small")
-meteor.pos = WIDTH // 2, HEIGHT
+meteor.pos = WIDTH, HEIGHT // 2
 
 # Timer
 start_time = time.time()
@@ -62,11 +65,22 @@ def update():
         meteor.x = WIDTH + MARGIN_METEOR
         meteor.y = random.randint(0, HEIGHT)
 
-    meteor.x -= 5
+    meteor.x -= GAME_SPEED
+
+    # Check for collisions
+    if meteor_created and check_collision(spaceship, meteor):
+        game_over()
+
+
+def check_collision(actor1, actor2):
+    return actor1.colliderect(actor2)
 
 
 def game_over():
-    pass
+    print("Game Over")
+    print(f"meteor: {meteor.x},  {meteor.y}")
+    print(f"spaceship: {spaceship.x},  {spaceship.y}")
+    exit()  # Exit the game
 
 
 pgzrun.go()
