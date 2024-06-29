@@ -12,6 +12,7 @@ MARGIN_METEOR = 20
 DELAY_METEOR = 3
 MARGIN_COLLISION = 15
 GAME_SPEED = 3
+GAME_OVER_TIME = 3
 
 
 def resize_image(image_file, width, height):
@@ -39,21 +40,37 @@ obstacle_images = [
 obstacle = Actor(random.choice(obstacle_images))
 obstacle.pos = WIDTH, HEIGHT // 2
 
-# Timer
+# Timer en booleans
 start_time = time.time()
 obstacle_created = False
+game_is_over = False
+game_over_time = 0
 
 
 def draw():
+    global obstacle_created, game_is_over
     screen.clear()
     screen.blit(background, (0, 0))
-    spaceship.draw()
-    if obstacle_created:
-        obstacle.draw()
+
+    if game_is_over:
+        screen.draw.text("GAME OVER",
+                         center=(WIDTH // 2, HEIGHT // 2),
+                         fontsize=64,
+                         color="red")
+    else:
+        spaceship.draw()
+        if obstacle_created:
+            obstacle.draw()
 
 
 def update():
-    global obstacle_created
+    global obstacle_created, game_is_over
+
+    if game_is_over:
+        if time.time() - game_over_time > GAME_OVER_TIME:
+            exit()
+        return
+
     # Start de eerste meteor na een vertraging
     if not obstacle_created and time.time() - start_time > DELAY_METEOR:
         obstacle_created = True
@@ -80,10 +97,12 @@ def check_collision(actor1, actor2):
 
 
 def game_over():
+    global game_is_over, game_over_time
     print("Game Over")
-    print(f"meteor: {obstacle.x},  {obstacle.y}")
+    print(f"obstacle: {obstacle.x},  {obstacle.y}")
     print(f"spaceship: {spaceship.x},  {spaceship.y}")
-    exit()  # Exit the game
+    game_is_over = True
+    game_over_time = time.time()
 
 
 pgzrun.go()
