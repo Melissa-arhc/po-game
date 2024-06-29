@@ -30,42 +30,48 @@ background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 spaceship = Actor(resize_image("ruimteschip.png", 139, 50))
 spaceship.pos = WIDTH // 3, HEIGHT // 2
 
-# Meteor instellen
-meteor = Actor(resize_image("meteor.png", 80, 80))
-meteor.pos = WIDTH, HEIGHT // 2
+# Obstakels instellen
+
+obstacle_images = [
+    resize_image(img, 80, 80)
+    for img in ["meteor.png", "ufo.png", "satellite.png"]
+]
+obstacle = Actor(random.choice(obstacle_images))
+obstacle.pos = WIDTH, HEIGHT // 2
 
 # Timer
 start_time = time.time()
-meteor_created = False
+obstacle_created = False
 
 
 def draw():
     screen.clear()
     screen.blit(background, (0, 0))
     spaceship.draw()
-    if meteor_created:
-        meteor.draw()
+    if obstacle_created:
+        obstacle.draw()
 
 
 def update():
-    global meteor_created
+    global obstacle_created
     # Start de eerste meteor na een vertraging
-    if not meteor_created and time.time() - start_time > DELAY_METEOR:
-        meteor_created = True
-        meteor.pos = WIDTH + MARGIN_METEOR, random.randint(0, HEIGHT)
+    if not obstacle_created and time.time() - start_time > DELAY_METEOR:
+        obstacle_created = True
+        obstacle.pos = WIDTH + MARGIN_METEOR, random.randint(0, HEIGHT)
 
     if keyboard.up and spaceship.y > MARGIN:
         spaceship.y -= 5
     if keyboard.down and spaceship.y < HEIGHT - MARGIN:
         spaceship.y += 5
-    if meteor.x < 0:
-        meteor.x = WIDTH + MARGIN_METEOR
-        meteor.y = random.randint(0, HEIGHT)
+    if obstacle.x < 0:
+        obstacle.image = random.choice(obstacle_images)
+        obstacle.x = WIDTH + MARGIN_METEOR
+        obstacle.y = random.randint(0, HEIGHT)
 
-    meteor.x -= GAME_SPEED
+    obstacle.x -= GAME_SPEED
 
     # Check for collisions
-    if meteor_created and check_collision(spaceship, meteor):
+    if obstacle_created and check_collision(spaceship, obstacle):
         game_over()
 
 
@@ -75,7 +81,7 @@ def check_collision(actor1, actor2):
 
 def game_over():
     print("Game Over")
-    print(f"meteor: {meteor.x},  {meteor.y}")
+    print(f"meteor: {obstacle.x},  {obstacle.y}")
     print(f"spaceship: {spaceship.x},  {spaceship.y}")
     exit()  # Exit the game
 
