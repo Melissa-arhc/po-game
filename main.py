@@ -13,26 +13,25 @@ DELAY_METEOR = 3
 MARGIN_COLLISION = 15
 GAME_SPEED = 3
 
+
+def resize_image(image_file, width, height):
+    resized_image_file = f"resized_{image_file}"
+    image = pygame.image.load(f"images/{image_file}")
+    image = pygame.transform.scale(image, (width, height))
+    pygame.image.save(image, f"images/{resized_image_file}")
+    return resized_image_file
+
+
 # Achtergrond instellen
 background = pygame.image.load("images/achtergrond.jpeg")
 background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
 # Ruimteschip instellen
-spaceship_image = pygame.image.load("images/ruimteschip.png")
-spaceship_image = pygame.transform.scale(spaceship_image, (139, 50))
-temp_file = "images/ruimteschip_small.png"
-pygame.image.save(spaceship_image, temp_file)
-
-spaceship = Actor("ruimteschip_small")
+spaceship = Actor(resize_image("ruimteschip.png", 139, 50))
 spaceship.pos = WIDTH // 3, HEIGHT // 2
 
 # Meteor instellen
-meteor_image = pygame.image.load("images/meteor.png")
-meteor_image = pygame.transform.scale(meteor_image, (80, 80))
-temp_file = "images/meteor_small.png"
-pygame.image.save(meteor_image, temp_file)
-
-meteor = Actor("meteor_small")
+meteor = Actor(resize_image("meteor.png", 80, 80))
 meteor.pos = WIDTH, HEIGHT // 2
 
 # Timer
