@@ -42,7 +42,7 @@ obstacle.pos = WIDTH, HEIGHT // 2
 
 # Timer en booleans
 start_time = time.time()
-obstacle_created = False
+obstacle_is_created = False
 game_is_over = False
 game_over_time = 0
 game_speed = START_GAME_SPEED
@@ -50,7 +50,7 @@ collisions = 0
 
 
 def draw():
-    global obstacle_created, game_is_over, game_speed, collisions
+    global obstacle_is_created, game_is_over, game_speed, collisions
     screen.clear()
     screen.blit(background, (0, 0))
 
@@ -65,12 +65,12 @@ def draw():
                          fontsize=40,
                          color="red")
         spaceship.draw()
-        if obstacle_created:
+        if obstacle_is_created:
             obstacle.draw()
 
 
 def update():
-    global obstacle_created, game_is_over, game_speed
+    global obstacle_is_created, game_is_over, game_speed, collisions
 
     if game_is_over:
         if time.time() - game_over_time > GAME_OVER_TIME:
@@ -78,8 +78,8 @@ def update():
         return
 
     # Start de eerste meteor na een vertraging
-    if not obstacle_created and time.time() - start_time > DELAY_METEOR:
-        obstacle_created = True
+    if not obstacle_is_created and time.time() - start_time > DELAY_METEOR:
+        obstacle_is_created = True
         obstacle.pos = WIDTH + MARGIN_METEOR, random.randint(0, HEIGHT)
 
     if keyboard.up and spaceship.y > MARGIN:
@@ -87,16 +87,25 @@ def update():
     if keyboard.down and spaceship.y < HEIGHT - MARGIN:
         spaceship.y += 5
     if obstacle.x < 0:
-        obstacle.image = random.choice(obstacle_images)
-        obstacle.x = WIDTH + MARGIN_METEOR
-        obstacle.y = random.randint(0, HEIGHT)
+        new_obstacle()
 
     game_speed = round(START_GAME_SPEED + (time.time() - start_time) / 12, 1)
     obstacle.x -= game_speed
 
     # Check for collisions
-    if obstacle_created and check_collision(spaceship, obstacle):
+    if obstacle_is_created and check_collision(spaceship, obstacle):
+        new_obstacle()
+        collisions += 1
+
+    if collisions >= 3:
         game_over()
+
+
+def new_obstacle():
+    global obastacle, obstacle_images
+    obstacle.image = random.choice(obstacle_images)
+    obstacle.x = WIDTH + MARGIN_METEOR
+    obstacle.y = random.randint(0, HEIGHT)
 
 
 def check_collision(actor1, actor2):
