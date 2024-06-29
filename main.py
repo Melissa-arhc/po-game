@@ -14,6 +14,9 @@ MARGIN_COLLISION = 15
 GAME_OVER_TIME = 3
 START_GAME_SPEED = 3
 
+pygame.mixer.init()
+collision_sound = pygame.mixer.Sound("sounds/collision.wav")
+
 
 def resize_image(image_file, width, height):
     resized_image_file = f"resized_{image_file}"
@@ -94,6 +97,7 @@ def update():
 
     # Check for collisions
     if obstacle_is_created and check_collision(spaceship, obstacle):
+        pygame.mixer.Sound.play(collision_sound)
         new_obstacle()
         collisions += 1
 
@@ -115,8 +119,6 @@ def check_collision(actor1, actor2):
 def game_over():
     global game_is_over, game_over_time
     print("Game Over")
-    print(f"obstacle: {obstacle.x},  {obstacle.y}")
-    print(f"spaceship: {spaceship.x},  {spaceship.y}")
     game_is_over = True
     game_over_time = time.time()
 
