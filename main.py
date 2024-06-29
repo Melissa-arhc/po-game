@@ -102,7 +102,7 @@ def update():
 
 
 def new_obstacle():
-    global obastacle, obstacle_images
+    global obstacle_images
     obstacle.image = random.choice(obstacle_images)
     obstacle.x = WIDTH + MARGIN_METEOR
     obstacle.y = random.randint(0, HEIGHT)
