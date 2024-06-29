@@ -19,8 +19,7 @@ background = pygame.transform.scale(background, (WIDTH, HEIGHT))
 
 # Ruimteschip instellen
 spaceship_image = pygame.image.load("images/ruimteschip.png")
-spaceship_image = pygame.transform.scale(spaceship_image, (80, 80))
-spaceship_image = pygame.transform.rotate(spaceship_image, -45)
+spaceship_image = pygame.transform.scale(spaceship_image, (139, 50))
 temp_file = "images/ruimteschip_small.png"
 pygame.image.save(spaceship_image, temp_file)
 
@@ -30,7 +29,6 @@ spaceship.pos = WIDTH // 3, HEIGHT // 2
 # Meteor instellen
 meteor_image = pygame.image.load("images/meteor.png")
 meteor_image = pygame.transform.scale(meteor_image, (80, 80))
-meteor_image = pygame.transform.rotate(meteor_image, -45)
 temp_file = "images/meteor_small.png"
 pygame.image.save(meteor_image, temp_file)
 
