@@ -5,14 +5,14 @@ import pgzrun
 import pygame
 
 # Window instellen
-WIDTH = 600
-HEIGHT = 350
+WIDTH = 800
+HEIGHT = 500
 MARGIN = 10
 MARGIN_METEOR = 20
 DELAY_METEOR = 3
 MARGIN_COLLISION = 15
-GAME_SPEED = 3
 GAME_OVER_TIME = 3
+START_GAME_SPEED = 3
 
 
 def resize_image(image_file, width, height):
@@ -45,26 +45,32 @@ start_time = time.time()
 obstacle_created = False
 game_is_over = False
 game_over_time = 0
+game_speed = START_GAME_SPEED
+collisions = 0
 
 
 def draw():
-    global obstacle_created, game_is_over
+    global obstacle_created, game_is_over, game_speed, collisions
     screen.clear()
     screen.blit(background, (0, 0))
 
     if game_is_over:
         screen.draw.text("GAME OVER",
                          center=(WIDTH // 2, HEIGHT // 2),
-                         fontsize=64,
+                         fontsize=80,
                          color="red")
     else:
+        screen.draw.text(f"speed: {game_speed}, collisions: {collisions}",
+                         center=(WIDTH // 2, HEIGHT - 40),
+                         fontsize=40,
+                         color="red")
         spaceship.draw()
         if obstacle_created:
             obstacle.draw()
 
 
 def update():
-    global obstacle_created, game_is_over
+    global obstacle_created, game_is_over, game_speed
 
     if game_is_over:
         if time.time() - game_over_time > GAME_OVER_TIME:
@@ -85,7 +91,8 @@ def update():
         obstacle.x = WIDTH + MARGIN_METEOR
         obstacle.y = random.randint(0, HEIGHT)
 
-    obstacle.x -= GAME_SPEED
+    game_speed = round(START_GAME_SPEED + (time.time() - start_time) / 12, 1)
+    obstacle.x -= game_speed
 
     # Check for collisions
     if obstacle_created and check_collision(spaceship, obstacle):
