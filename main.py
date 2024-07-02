@@ -12,11 +12,22 @@ MARGIN_METEOR = 20
 DELAY_METEOR = 3
 MARGIN_COLLISION = 15
 GAME_OVER_TIME = 3
-START_GAME_SPEED = 3
+START_GAME_SPEED = 6
 
+#Soundeffect collision instellen
 pygame.mixer.init()
 collision_sound = pygame.mixer.Sound("sounds/collision.wav")
 
+#Soundeffect gameover instellen
+pygame.mixer.init()
+gameover_sound = pygame.mixer.Sound("sounds/gameover.wav")
+
+#Achtergrondmuziek laden
+pygame.mixer.music.load("sounds/achtergrondmuziek.wav")
+#Muziek laten herhalen
+pygame.mixer.music.play(-1) 
+#Volume achtergrondmuziek instellen
+pygame.mixer.music.set_volume(0.5)
 
 def resize_image(image_file, width, height):
     resized_image_file = f"resized_{image_file}"
@@ -102,8 +113,8 @@ def update():
         collisions += 1
 
     if collisions >= 3:
+        pygame.mixer.Sound.play(gameover_sound)
         game_over()
-
 
 def new_obstacle():
     global obstacle_images
