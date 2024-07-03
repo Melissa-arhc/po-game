@@ -15,19 +15,19 @@ MARGIN_COLLISION = 15
 GAME_OVER_TIME = 3
 START_GAME_SPEED = 6
 
-#Soundeffect collision instellen
+# Soundeffect collision instellen
 pygame.mixer.init()
 collision_sound = pygame.mixer.Sound("sounds/collision.wav")
 
-#Soundeffect gameover instellen
+# Soundeffect gameover instellen
 pygame.mixer.init()
 gameover_sound = pygame.mixer.Sound("sounds/gameover.wav")
 
-#Achtergrondmuziek laden
+# Achtergrondmuziek laden
 pygame.mixer.music.load("sounds/achtergrondmuziek.wav")
-#Muziek laten herhalen
-pygame.mixer.music.play(-1) 
-#Volume achtergrondmuziek instellen
+# Muziek laten herhalen
+pygame.mixer.music.play(-1)
+# Volume achtergrondmuziek instellen
 pygame.mixer.music.set_volume(0.5)
 
 def resize_image(image_file, width, height):
@@ -37,133 +37,137 @@ def resize_image(image_file, width, height):
     pygame.image.save(image, f"images/{resized_image_file}")
     return resized_image_file
 
-# SQLite database instellen
-conn = sqlite3.connect('highscore.db')
-c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS highscore (score REAL)''')
-conn.commit()
+class SpaceGame:
+    def __init__(self):
+        # SQLite database instellen
+        self.conn = sqlite3.connect('highscore.db')
+        self.c = self.conn.cursor()
+        self.c.execute('''CREATE TABLE IF NOT EXISTS highscore (score REAL)''')
+        self.conn.commit()
 
-def get_high_score():
-    c.execute('SELECT MAX(score) FROM highscore')
-    result = c.fetchone()
-    return result[0] if result[0] is not None else 0
+        # Achtergrond instellen
+        self.background = pygame.image.load("images/achtergrond.jpeg")
+        self.background = pygame.transform.scale(self.background, (WIDTH, HEIGHT))
 
-def save_high_score(score):
-    c.execute('INSERT INTO highscore (score) VALUES (?)', (score,))
-    conn.commit()
+        # Ruimteschip instellen
+        self.spaceship = Actor(resize_image("ruimteschip.png", 139, 50))
+        self.spaceship.pos = WIDTH // 3, HEIGHT // 2
 
-# Achtergrond instellen
-background = pygame.image.load("images/achtergrond.jpeg")
-background = pygame.transform.scale(background, (WIDTH, HEIGHT))
+        # Obstakels instellen
+        self.obstacle_images = [
+            resize_image(img, 80, 80)
+            for img in ["meteor.png", "ufo.png", "satellite.png"]
+        ]
+        self.obstacle = Actor(random.choice(self.obstacle_images))
+        self.obstacle.pos = WIDTH, HEIGHT // 2
 
-# Ruimteschip instellen
-spaceship = Actor(resize_image("ruimteschip.png", 139, 50))
-spaceship.pos = WIDTH // 3, HEIGHT // 2
+        # Timer en booleans
+        self.start_time = time.time()
+        self.obstacle_is_created = False
+        self.game_is_over = False
+        self.game_over_time = 0
+        self.game_speed = START_GAME_SPEED
+        self.collisions = 0
+        self.high_score = self.get_high_score()
+        self.current_score = 0
 
-# Obstakels instellen
-obstacle_images = [
-    resize_image(img, 80, 80)
-    for img in ["meteor.png", "ufo.png", "satellite.png"]
-]
-obstacle = Actor(random.choice(obstacle_images))
-obstacle.pos = WIDTH, HEIGHT // 2
+    def get_high_score(self):
+        self.c.execute('SELECT MAX(score) FROM highscore')
+        result = self.c.fetchone()
+        return result[0] if result[0] is not None else 0
 
-# Timer en booleans
-start_time = time.time()
-obstacle_is_created = False
-game_is_over = False
-game_over_time = 0
-game_speed = START_GAME_SPEED
-collisions = 0
-high_score = get_high_score()
-current_score = 0
+    def save_high_score(self, score):
+        self.c.execute('INSERT INTO highscore (score) VALUES (?)', (score,))
+        self.conn.commit()
+
+    def draw(self):
+        screen.clear()
+        screen.blit(self.background, (0, 0))
+
+        if self.game_is_over:
+            screen.draw.text("GAME OVER",
+                             center=(WIDTH // 2, HEIGHT // 2),
+                             fontsize=80,
+                             color="red")
+            screen.draw.text(f"High Score: {self.high_score}",
+                             center=(WIDTH // 2, HEIGHT // 2 + 80),
+                             fontsize=40,
+                             color="yellow")
+            screen.draw.text(f"Your Score: {self.current_score}",
+                             center=(WIDTH // 2, HEIGHT // 2 + 130),
+                             fontsize=40,
+                             color="white")
+        else:
+            screen.draw.text(f"speed: {self.game_speed}, collisions: {self.collisions}",
+                             center=(WIDTH // 2, HEIGHT - 40),
+                             fontsize=40,
+                             color="red")
+            self.spaceship.draw()
+            if self.obstacle_is_created:
+                self.obstacle.draw()
+
+    def update(self):
+        if self.game_is_over:
+            if time.time() - self.game_over_time > GAME_OVER_TIME:
+                exit()
+            return
+
+        # Start de eerste meteor na een vertraging
+        if not self.obstacle_is_created and time.time() - self.start_time > DELAY_METEOR:
+            self.obstacle_is_created = True
+            self.obstacle.pos = WIDTH + MARGIN_METEOR, random.randint(0, HEIGHT)
+
+        if keyboard.up and self.spaceship.y > MARGIN:
+            self.spaceship.y -= 5
+        if keyboard.down and self.spaceship.y < HEIGHT - MARGIN:
+            self.spaceship.y += 5
+        if self.obstacle.x < 0:
+            self.new_obstacle()
+
+        self.game_speed = round(START_GAME_SPEED + (time.time() - self.start_time) / 12, 1)
+        self.obstacle.x -= self.game_speed
+
+        # Update current score
+        self.current_score = self.game_speed
+
+        # Check for collisions
+        if self.obstacle_is_created and self.check_collision(self.spaceship, self.obstacle):
+            pygame.mixer.Sound.play(collision_sound)
+            self.new_obstacle()
+            self.collisions += 1
+
+        # Bij 3 collisions "Game Over" weergeven
+        if self.collisions >= 3:
+            pygame.mixer.Sound.play(gameover_sound)
+            if self.game_speed > self.high_score:
+                self.save_high_score(self.game_speed)
+                self.high_score = self.game_speed
+            self.game_over()
+
+    def new_obstacle(self):
+        self.obstacle.image = random.choice(self.obstacle_images)
+        self.obstacle.x = WIDTH + MARGIN_METEOR
+        self.obstacle.y = random.randint(0, HEIGHT)
+
+    def check_collision(self, actor1, actor2):
+        return actor1.colliderect(actor2)
+
+    def game_over(self):
+        print("Game Over")
+        self.game_is_over = True
+        self.game_over_time = time.time()
+
+# Instantie van de game class aanmaken
+game = SpaceGame()
 
 def draw():
-    global obstacle_is_created, game_is_over, game_speed, collisions, high_score, current_score
-    screen.clear()
-    screen.blit(background, (0, 0))
-
-    if game_is_over:
-        screen.draw.text("GAME OVER",
-                         center=(WIDTH // 2, HEIGHT // 2),
-                         fontsize=80,
-                         color="red")
-        screen.draw.text(f"High Score: {high_score}",
-                         center=(WIDTH // 2, HEIGHT // 2 + 80),
-                         fontsize=40,
-                         color="yellow")
-        screen.draw.text(f"Your Score: {current_score}",
-                         center=(WIDTH // 2, HEIGHT // 2 + 130),
-                         fontsize=40,
-                         color="white")
-    else:
-        screen.draw.text(f"speed: {game_speed}, collisions: {collisions}",
-                         center=(WIDTH // 2, HEIGHT - 40),
-                         fontsize=40,
-                         color="red")
-        spaceship.draw()
-        if obstacle_is_created:
-            obstacle.draw()
+    game.draw()
 
 def update():
-    global obstacle_is_created, game_is_over, game_speed, collisions, high_score, current_score
-
-    if game_is_over:
-        if time.time() - game_over_time > GAME_OVER_TIME:
-            exit()
-        return
-
-    # Start de eerste meteor na een vertraging
-    if not obstacle_is_created and time.time() - start_time > DELAY_METEOR:
-        obstacle_is_created = True
-        obstacle.pos = WIDTH + MARGIN_METEOR, random.randint(0, HEIGHT)
-
-    if keyboard.up and spaceship.y > MARGIN:
-        spaceship.y -= 5
-    if keyboard.down and spaceship.y < HEIGHT - MARGIN:
-        spaceship.y += 5
-    if obstacle.x < 0:
-        new_obstacle()
-
-    game_speed = round(START_GAME_SPEED + (time.time() - start_time) / 12, 1)
-    obstacle.x -= game_speed
-
-    # Update current score
-    current_score = game_speed
-
-    # Check for collisions
-    if obstacle_is_created and check_collision(spaceship, obstacle):
-        pygame.mixer.Sound.play(collision_sound)
-        new_obstacle()
-        collisions += 1
-
-    #Bij 3 collisions "Game Over" weergeven
-    if collisions >= 3:
-        pygame.mixer.Sound.play(gameover_sound)
-        if game_speed > high_score:
-            save_high_score(game_speed)
-            high_score = game_speed
-        game_over()
-
-def new_obstacle():
-    global obstacle_images
-    obstacle.image = random.choice(obstacle_images)
-    obstacle.x = WIDTH + MARGIN_METEOR
-    obstacle.y = random.randint(0, HEIGHT)
-
-def check_collision(actor1, actor2):
-    return actor1.colliderect(actor2)
-
-def game_over():
-    global game_is_over, game_over_time
-    print("Game Over")
-    game_is_over = True
-    game_over_time = time.time()
+    game.update()
 
 pgzrun.go()
 
-# verbinding met SQLite-database afsluiten
+# Verbinding met SQLite-database afsluiten
 import atexit
-atexit.register(lambda: conn.close())
-
-
+atexit.register(lambda: game.conn.close())
