@@ -1,5 +1,6 @@
 import random
 import time
+import sqlite3
 
 import pgzrun
 import pygame
@@ -36,6 +37,20 @@ def resize_image(image_file, width, height):
     pygame.image.save(image, f"images/{resized_image_file}")
     return resized_image_file
 
+# SQLite database instellen
+conn = sqlite3.connect('highscore.db')
+c = conn.cursor()
+c.execute('''CREATE TABLE IF NOT EXISTS highscore (score REAL)''')
+conn.commit()
+
+def get_high_score():
+    c.execute('SELECT MAX(score) FROM highscore')
+    result = c.fetchone()
+    return result[0] if result[0] is not None else 0
+
+def save_high_score(score):
+    c.execute('INSERT INTO highscore (score) VALUES (?)', (score,))
+    conn.commit()
 
 # Achtergrond instellen
 background = pygame.image.load("images/achtergrond.jpeg")
@@ -46,7 +61,6 @@ spaceship = Actor(resize_image("ruimteschip.png", 139, 50))
 spaceship.pos = WIDTH // 3, HEIGHT // 2
 
 # Obstakels instellen
-
 obstacle_images = [
     resize_image(img, 80, 80)
     for img in ["meteor.png", "ufo.png", "satellite.png"]
@@ -61,10 +75,10 @@ game_is_over = False
 game_over_time = 0
 game_speed = START_GAME_SPEED
 collisions = 0
-
+high_score = get_high_score()
 
 def draw():
-    global obstacle_is_created, game_is_over, game_speed, collisions
+    global obstacle_is_created, game_is_over, game_speed, collisions, high_score
     screen.clear()
     screen.blit(background, (0, 0))
 
@@ -73,6 +87,10 @@ def draw():
                          center=(WIDTH // 2, HEIGHT // 2),
                          fontsize=80,
                          color="red")
+        screen.draw.text(f"High Score: {high_score}",
+                         center=(WIDTH // 2, HEIGHT // 2 + 80),
+                         fontsize=40,
+                         color="yellow")
     else:
         screen.draw.text(f"speed: {game_speed}, collisions: {collisions}",
                          center=(WIDTH // 2, HEIGHT - 40),
@@ -82,9 +100,8 @@ def draw():
         if obstacle_is_created:
             obstacle.draw()
 
-
 def update():
-    global obstacle_is_created, game_is_over, game_speed, collisions
+    global obstacle_is_created, game_is_over, game_speed, collisions, high_score
 
     if game_is_over:
         if time.time() - game_over_time > GAME_OVER_TIME:
@@ -112,8 +129,12 @@ def update():
         new_obstacle()
         collisions += 1
 
+    #Bij 3 collisions "Game Over" weergeven
     if collisions >= 3:
         pygame.mixer.Sound.play(gameover_sound)
+        if game_speed > high_score:
+            save_high_score(game_speed)
+            high_score = game_speed
         game_over()
 
 def new_obstacle():
@@ -122,10 +143,8 @@ def new_obstacle():
     obstacle.x = WIDTH + MARGIN_METEOR
     obstacle.y = random.randint(0, HEIGHT)
 
-
 def check_collision(actor1, actor2):
     return actor1.colliderect(actor2)
-
 
 def game_over():
     global game_is_over, game_over_time
@@ -133,5 +152,9 @@ def game_over():
     game_is_over = True
     game_over_time = time.time()
 
-
 pgzrun.go()
+
+# verbinding met SQLite-database afsluiten
+import atexit
+atexit.register(lambda: conn.close())
+
