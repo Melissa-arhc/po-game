@@ -97,6 +97,10 @@ class SpaceGame:
                              center=(WIDTH // 2, HEIGHT // 2 + 130),
                              fontsize=40,
                              color="white")
+            screen.draw.text("Restart",
+                             center=(WIDTH // 2, HEIGHT // 2 + 180),
+                             fontsize=40,
+                             color="green")
         else:
             screen.draw.text(f"speed: {self.game_speed}, collisions: {self.collisions}",
                              center=(WIDTH // 2, HEIGHT - 40),
@@ -108,8 +112,6 @@ class SpaceGame:
 
     def update(self):
         if self.game_is_over:
-            if time.time() - self.game_over_time > GAME_OVER_TIME:
-                exit()
             return
 
         # Start de eerste meteor na een vertraging
@@ -157,6 +159,17 @@ class SpaceGame:
         self.game_is_over = True
         self.game_over_time = time.time()
 
+    def restart(self):
+        self.start_time = time.time()
+        self.obstacle_is_created = False
+        self.game_is_over = False
+        self.game_over_time = 0
+        self.game_speed = START_GAME_SPEED
+        self.collisions = 0
+        self.current_score = 0
+        self.spaceship.pos = WIDTH // 3, HEIGHT // 2
+        self.obstacle.pos = WIDTH, HEIGHT // 2
+
 # Instantie van de game class aanmaken
 game = SpaceGame()
 
@@ -165,6 +178,12 @@ def draw():
 
 def update():
     game.update()
+
+def on_mouse_down(pos):
+    if game.game_is_over:
+        restart_text_rect = Rect((WIDTH // 2 - 60, HEIGHT // 2 + 160), (120, 40))
+        if restart_text_rect.collidepoint(pos):
+            game.restart()
 
 pgzrun.go()
 
