@@ -76,9 +76,10 @@ game_over_time = 0
 game_speed = START_GAME_SPEED
 collisions = 0
 high_score = get_high_score()
+current_score = 0
 
 def draw():
-    global obstacle_is_created, game_is_over, game_speed, collisions, high_score
+    global obstacle_is_created, game_is_over, game_speed, collisions, high_score, current_score
     screen.clear()
     screen.blit(background, (0, 0))
 
@@ -91,6 +92,10 @@ def draw():
                          center=(WIDTH // 2, HEIGHT // 2 + 80),
                          fontsize=40,
                          color="yellow")
+        screen.draw.text(f"Your Score: {current_score}",
+                         center=(WIDTH // 2, HEIGHT // 2 + 130),
+                         fontsize=40,
+                         color="white")
     else:
         screen.draw.text(f"speed: {game_speed}, collisions: {collisions}",
                          center=(WIDTH // 2, HEIGHT - 40),
@@ -101,7 +106,7 @@ def draw():
             obstacle.draw()
 
 def update():
-    global obstacle_is_created, game_is_over, game_speed, collisions, high_score
+    global obstacle_is_created, game_is_over, game_speed, collisions, high_score, current_score
 
     if game_is_over:
         if time.time() - game_over_time > GAME_OVER_TIME:
@@ -122,6 +127,9 @@ def update():
 
     game_speed = round(START_GAME_SPEED + (time.time() - start_time) / 12, 1)
     obstacle.x -= game_speed
+
+    # Update current score
+    current_score = game_speed
 
     # Check for collisions
     if obstacle_is_created and check_collision(spaceship, obstacle):
@@ -157,4 +165,5 @@ pgzrun.go()
 # verbinding met SQLite-database afsluiten
 import atexit
 atexit.register(lambda: conn.close())
+
 
